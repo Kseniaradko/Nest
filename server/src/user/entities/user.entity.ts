@@ -1,4 +1,5 @@
-import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import {Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
+import {Post} from "../../posts/entities/post.entity";
 
 @Entity()
 export class User {
@@ -13,6 +14,11 @@ export class User {
 
     @Column()
     name: string
+
+    @OneToMany(() => Post, (post) => post.user, {
+        onDelete: "CASCADE"
+    })
+    posts: Post[]
 
     @CreateDateColumn()
     createdAt: Date

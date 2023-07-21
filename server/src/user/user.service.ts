@@ -1,16 +1,18 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {InjectRepository} from "@nestjs/typeorm";
 import {User} from "./entities/user.entity";
 import {Repository} from "typeorm";
 import * as argon2 from 'argon2';
+import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
 export class UserService {
 
   constructor(
-      @InjectRepository(User) private readonly userRepository: Repository<User>
+      @InjectRepository(User) private readonly userRepository: Repository<User>,
+      private readonly jwtService: JwtService
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -28,11 +30,9 @@ export class UserService {
       name: createUserDto.name
     })
 
-    return { user };
-  }
+    const token = this.jwtService.sign({ email: createUserDto.email })
 
-  findAll() {
-    return `This action returns all user`;
+    return { user, token };
   }
 
   async findOne(email: string) {
@@ -41,8 +41,14 @@ export class UserService {
       } })
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const user = await this.userRepository.findOne({
+      where: { id }
+    })
+    if (!user) throw new NotFoundException('This user does not exist!')
+
+    return await this.userRepository.update(id, updateUserDto);
+
   }
 
   remove(id: number) {
